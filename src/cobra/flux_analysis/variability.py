@@ -373,7 +373,13 @@ def find_blocked_reactions(
         # Limit the search space to reactions which have zero flux. If the
         # reactions already carry flux in this solution,
         # then they cannot be blocked.
-        model.slim_optimize()
+        model.slim_optimize(
+            error_value=None,
+            message=(
+                "Solving the model for find_blocked_reactions failed; "
+                "the solver returned a non-optimal status."
+            ),
+        )
         solution = get_solution(model, reactions=reaction_list)
         reaction_list = solution.fluxes[
             solution.fluxes.abs() < zero_cutoff

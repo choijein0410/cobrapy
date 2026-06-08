@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 
 from cobra import Model
-from cobra.exceptions import Infeasible
+from cobra.exceptions import Infeasible, OptimizationError
 from cobra.flux_analysis.variability import (
     find_blocked_reactions,
     find_essential_genes,
@@ -213,3 +213,14 @@ def test_find_blocked_reactions(model: Model, all_solvers: List[str]) -> None:
 
     result = find_blocked_reactions(model, model.reactions[30:50], open_exchanges=True)
     assert result == []
+
+
+def test_find_blocked_reactions_infeasible(model: Model) -> None:
+    """Test find_blocked_reactions() raises on a non-optimal initial solve."""
+    infeasible_model = model.copy()
+    infeasible_model.reactions.get_by_id("EX_glc__D_e").lower_bound = 0
+    # The initial optimization is infeasible (ATP maintenance cannot be met
+    # without glucose uptake), so find_blocked_reactions should raise an
+    # explicit error instead of proceeding with an invalid solution.
+    with pytest.raises(OptimizationError, match="find_blocked_reactions"):
+        find_blocked_reactions(infeasible_model)
